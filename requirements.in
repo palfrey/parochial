@@ -1,0 +1,9 @@
+-e ./Cohen3
+
+# For https://github.com/lobocv/eventdispatcher/commit/b238ee18fa511c54090c21c7801564edd0dd95ef#diff-3e88a25682c0094a8dfc3cabbaa05dcb to fix clock issue
+# >= 1.9.0 should be enough, but pip-compile fails if I do that
+eventdispatcher == 1.9.0
+
+UPnP-Inspector
+
+pip-tools
