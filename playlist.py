@@ -9,6 +9,16 @@ from twisted.python.filepath import FilePath
 import logging
 import random
 import os.path
+import re
+
+NUMS = re.compile('([0-9]+)')
+
+def _natural_key(s):
+    # strip the spaces
+    s = s.get_name().strip()
+    # <class 'TypeError'>: '<' not supported between instances of 'int' and 'str'
+    return [part.isdigit() and part or part.lower() for part in
+            NUMS.split(s)]
 
 class ShortListItem(BackendItem):
     logCategory = 'shortlist_item'
@@ -22,7 +32,8 @@ class ShortListItem(BackendItem):
             self.update_id = 0
         if mimetype == 'item' and path is None:
             path = os.path.join(parent.get_realpath(), str(self.id))
-        self.location = FilePath(path)
+        self.location = path
+        print("location", self.location)
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -58,14 +69,18 @@ class ShortListItem(BackendItem):
         return name
 
     def get_children(self, start=0, request_count=0):
-        print("get_children", self, start, request_count, self.children)
-        if not self.sorted:
-            self.children.sort(key=_natural_key)
-            self.sorted = True
-        if request_count == 0:
-            return self.children[start:]
-        else:
-            return self.children[start:request_count]
+        try:
+            print(f"get_children me: {self} start: {start} count: {request_count} children: {self.children}")
+            if not self.sorted:
+                self.children.sort(key=_natural_key)
+                self.sorted = True
+            if request_count == 0:
+                return self.children[start:]
+            else:
+                return self.children[start:request_count]
+        except Exception as e:
+            print(e)
+            raise
 
     def get_child_count(self):
         print("get_child_count")
@@ -128,7 +143,7 @@ class ShortListStore(BackendStore):
         return ret
 
     def __getattr__(self, key):
-        print("get store", key)
+        #print("get store", key)
         return super.__getattr__(self, key)
 
     def get_by_id(self, id):
@@ -143,24 +158,28 @@ class ShortListStore(BackendStore):
     def make_playlist(self):
         print("Source backend", self.source_backend)
         keys = list(self.source_backend.store.keys())
+        used_keys = []
         for x in range(5):
             while True:
                 key = random.choice(keys)
                 item = self.source_backend.store[key]
+                if key in used_keys:
+                    continue
                 if type(item.item) != AudioItem:
                     continue
-                print("theirs", item, item.item, item.item.res[0].__dict__)
+                print("theirs", item, item.item, item.item.res[0].__dict__, item.location)
                 _, ext = os.path.splitext(item.url)
                 id = self.getnextID()
                 id = str(id) + ext.lower()
                 self.store[id] = ShortListItem(
-                            id, self.root, item.url, item.mimetype,
+                            id, self.root, item.location, item.mimetype,
                             self.urlbase, classChooser(item.mimetype), update=True, store=self)
                 self.store[id].item.res = item.item.res
                 print("mine", self.store[id], self.store[id].item, self.store[id].item.res[0].__dict__)
-                print(dir(self.store[id]))
+                #print(dir(self.store[id]))
                 self.root.add_child(self.store[id])
                 self.root.update_id +=1
+                used_keys.append(key)
                 break
         print("children", self.root.children)
 
