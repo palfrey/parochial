@@ -1,10 +1,11 @@
+from __future__ import print_function
 from twisted.internet import reactor
 from coherence.base import Coherence, Plugins
 from coherence.backend import BackendItem, BackendStore
-from coherence.backends.fs_storage import FSStore
-from coherence.log import get_logger, loggers
+from coherence.backends.mediadb_storage import MediaStore, Track, KNOWN_AUDIO_TYPES
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, AudioItem
 from twisted.python.filepath import FilePath
+import coherence.extern.louie as louie
 
 import logging
 import random
@@ -62,15 +63,16 @@ class ShortListItem(BackendItem):
         self.sorted = False
 
     def get_name(self):
+        if hasattr(self, "display"):
+            return self.display
         if isinstance(self.location, FilePath):
-            name = self.location.basename()
+            return self.location.basename()
         else:
-            name = self.location
-        return name
+            return self.location
 
     def get_children(self, start=0, request_count=0):
         try:
-            print(f"get_children me: {self} start: {start} count: {request_count} children: {self.children}")
+            #print("get_children me: {self} start: {start} count: {request_count} children: {self.children}")
             if not self.sorted:
                 self.children.sort(key=_natural_key)
                 self.sorted = True
@@ -123,16 +125,14 @@ class ShortListStore(BackendStore):
             id, None, 'media', 'root',
             self.urlbase, UPnPClass, update=True, store=self)
 
-        self.source_backend = FSStore(None, **kwargs)
+        self.source_backend = MediaStore(server, **kwargs)
 
         self.wmc_mapping.update({'14': '0',
                                  '15': '0',
                                  '16': '0',
                                  '17': '0'
                                  })
-        self.make_playlist()
-        print(self.store)
-        self.init_completed = True
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
         return self.__class__.__name__
@@ -142,9 +142,9 @@ class ShortListStore(BackendStore):
         self.next_id += 1
         return ret
 
-    def __getattr__(self, key):
-        #print("get store", key)
-        return super.__getattr__(self, key)
+    # def __getattr__(self, key):
+    #     #print("get store", key)
+    #     return super.__getattr__(self, key)
 
     def get_by_id(self, id):
         print("Get by id", id)
@@ -157,82 +157,56 @@ class ShortListStore(BackendStore):
     
     def make_playlist(self):
         print("Source backend", self.source_backend)
-        keys = list(self.source_backend.store.keys())
+        print(dir(self.source_backend))
+        keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
         used_keys = []
         for x in range(5):
             while True:
-                key = random.choice(keys)
-                item = self.source_backend.store[key]
-                if key in used_keys:
+                item = random.choice(keys)
+                if item in used_keys:
                     continue
-                if type(item.item) != AudioItem:
-                    continue
-                print("theirs", item, item.item, item.item.res[0].__dict__, item.location)
-                _, ext = os.path.splitext(item.url)
+                #print("theirs", item, item.get_item(), item.item.res[0].__dict__, item.location)
+                print("theirs", item.__dict__)
+                _, ext = os.path.splitext(item.location)
                 id = self.getnextID()
                 id = str(id) + ext.lower()
+
+                try:
+                    mimetype = KNOWN_AUDIO_TYPES[ext]
+                except KeyError:
+                    mimetype = 'audio/mpeg'
+
                 self.store[id] = ShortListItem(
-                            id, self.root, item.location, item.mimetype,
-                            self.urlbase, classChooser(item.mimetype), update=True, store=self)
-                self.store[id].item.res = item.item.res
+                            id, self.root, item.location, mimetype,
+                            self.urlbase, classChooser(mimetype), update=True, store=self)
+                
+                self.store[id].item = item.get_item()
+                self.store[id].item.title = "%s - %s" % (item.album.artist.name, item.title)
+                #self.store[id].item.artist = item.album.artist.name
+                #self.store[id].item.album = item.album.title
+
                 print("mine", self.store[id], self.store[id].item, self.store[id].item.res[0].__dict__)
                 #print(dir(self.store[id]))
                 self.root.add_child(self.store[id])
                 self.root.update_id +=1
-                used_keys.append(key)
+                used_keys.append(item)
                 break
         print("children", self.root.children)
 
     def upnp_init(self):
+        self.source_backend.upnp_init()
         print("upnp_init", self.server)
+        self.make_playlist()
+        print(self.store)
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(
                 0,
                 'SourceProtocolInfo',
-                [f'internal:{self.server.coherence.hostname}:audio/mpeg:*',
+                ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                  'http-get:*:audio/mpeg:*',
-                 f'internal:{self.server.coherence.hostname}:video/mp4:*',
-                 'http-get:*:video/mp4:*',
-                 f'internal:{self.server.coherence.hostname}:application/ogg:*',  # noqa
+                 'internal:%s:application/ogg:*' % self.server.coherence.hostname,  # noqa
                  'http-get:*:application/ogg:*',
-                 f'internal:{self.server.coherence.hostname}:video/x-msvideo:*',  # noqa
-                 'http-get:*:video/x-msvideo:*',
-                 f'internal:{self.server.coherence.hostname}:video/mpeg:*',
-                 'http-get:*:video/mpeg:*',
-                 f'internal:{self.server.coherence.hostname}:video/avi:*',
-                 'http-get:*:video/avi:*',
-                 f'internal:{self.server.coherence.hostname}:video/divx:*',
-                 'http-get:*:video/divx:*',
-                 f'internal:{self.server.coherence.hostname}:video/quicktime:*',  # noqa
-                 'http-get:*:video/quicktime:*',
-                 f'internal:{self.server.coherence.hostname}:image/gif:*',
-                 'http-get:*:image/gif:*',
-                 f'internal:{self.server.coherence.hostname}:image/jpeg:*',
-                 'http-get:*:image/jpeg:*'
-                 # 'http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;'
-                 # 'DLNA.ORG_FLAGS=01700000000000000000000000000000',
-                 # 'http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMABASE;'
-                 # 'DLNA.ORG_OP=11;DLNA.ORG_FLAGS'
-                 # '=01700000000000000000000000000000',
-                 # 'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=00f00000000000000000000000000000',
-                 # 'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=00f00000000000000000000000000000',
-                 # 'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=00f00000000000000000000000000000',
-                 # 'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=00f00000000000000000000000000000',
-                 # 'http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_PAL;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=01700000000000000000000000000000',
-                 # 'http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVMED_BASE;'
-                 # 'DLNA.ORG_OP=01;DLNA.ORG_FLAGS'
-                 # '=01700000000000000000000000000000',
                  ],
                 default=True)
             self.server.content_directory_server.set_variable(
@@ -245,10 +219,17 @@ Plugins().set("ShortListStore", ShortListStore)
 coherence = Coherence(
     {'logmode': 'warning',
      'controlpoint': 'yes',
+     'interface': 'en0',
      'plugin': [
           {'backend': 'ShortListStore',
           'name': 'Shortlist',
-          'content': '/Users/palfrey/Dropbox/Music/Kittie'}
+          'medialocation': '/Users/palfrey/Dropbox/Music/Kittie',
+          'mediadb': 'test.db'},
+          {'backend': 'MediaStore',
+          'name': 'mediadb',
+          'medialocation': '/Users/palfrey/Dropbox/Music/Kittie',
+          'mediadb': 'test.db'
+          }
      ]
      }
 )
