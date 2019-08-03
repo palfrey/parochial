@@ -167,12 +167,11 @@ class ShortListStore(BackendStore):
         print("Source backend", self.source_backend)
         print(dir(self.source_backend))
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
-        used_keys = []
         for x in range(5):
             while True:
+                if len(keys) == 0:
+                    raise Exception("Ran out")
                 item = random.choice(keys)
-                if item in used_keys:
-                    continue
                 #print("theirs", item, item.get_item(), item.item.res[0].__dict__, item.location)
                 print("theirs", item.__dict__, dir(item), item.get_id())
                 _, ext = os.path.splitext(item.location)
@@ -199,7 +198,7 @@ class ShortListStore(BackendStore):
                 #print(dir(self.store[id]))
                 self.root.add_child(self.store[id])
                 self.root.update_id +=1
-                used_keys.append(item)
+                keys.remove(item)
                 break
         print("children", self.root.children)
 
