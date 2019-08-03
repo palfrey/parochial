@@ -89,7 +89,7 @@ class ShortListItem(BackendItem):
         return self.child_count
 
     def __getattr__(self, key):
-        print("get item", key)
+        #print("get item", key)
         return super.__getattr__(self, key)
 
     def __repr__(self):
@@ -150,9 +150,17 @@ class ShortListStore(BackendStore):
         print("Get by id", id)
         if id == '0':
             id = '1000'
+        if id.find(".") != -1:
+            new_id = id.split(".")[0]
+            print("Splitting from %s to %s" %(id, new_id))
+            id = new_id
         try:
-            return self.store[id]
+            item = self.store[id]
+            print(item)
+            return item
         except KeyError:
+            print("Nothing for", id)
+            print(self.store.keys())
             return None
     
     def make_playlist(self):
@@ -166,10 +174,10 @@ class ShortListStore(BackendStore):
                 if item in used_keys:
                     continue
                 #print("theirs", item, item.get_item(), item.item.res[0].__dict__, item.location)
-                print("theirs", item.__dict__)
+                print("theirs", item.__dict__, dir(item), item.get_id())
                 _, ext = os.path.splitext(item.location)
                 id = self.getnextID()
-                id = str(id) + ext.lower()
+                id = str(id)
 
                 try:
                     mimetype = KNOWN_AUDIO_TYPES[ext]
@@ -184,6 +192,8 @@ class ShortListStore(BackendStore):
                 self.store[id].item.title = "%s - %s" % (item.album.artist.name, item.title)
                 #self.store[id].item.artist = item.album.artist.name
                 #self.store[id].item.album = item.album.title
+
+                self.store[str(item.get_id())] = self.store[id] # alias so we can find it later
 
                 print("mine", self.store[id], self.store[id].item, self.store[id].item.res[0].__dict__)
                 #print(dir(self.store[id]))
