@@ -10,3 +10,6 @@ axiom
 tagpy
 netifaces
 twisted < 15
+
+# Because last release is very broken. See https://github.com/inducer/tagpy/issues/5
+-e git+https://github.com/inducer/tagpy.git#egg=tagpy
