@@ -34,7 +34,7 @@ class ShortListItem(BackendItem):
         if mimetype == 'item' and path is None:
             path = os.path.join(parent.get_realpath(), str(self.id))
         self.location = path
-        print("location", self.location)
+        self.debug("location", self.location)
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -72,7 +72,6 @@ class ShortListItem(BackendItem):
 
     def get_children(self, start=0, request_count=0):
         try:
-            #print("get_children me: {self} start: {start} count: {request_count} children: {self.children}")
             if not self.sorted:
                 self.children.sort(key=_natural_key)
                 self.sorted = True
@@ -81,11 +80,11 @@ class ShortListItem(BackendItem):
             else:
                 return self.children[start:request_count]
         except Exception as e:
-            print(e)
+            self.error(e)
             raise
 
     def get_child_count(self):
-        print("get_child_count")
+        self.debug("get_child_count")
         return self.child_count
 
     def __getattr__(self, key):
@@ -143,25 +142,21 @@ class ShortListStore(BackendStore):
         self.next_id += 1
         return ret
 
-    # def __getattr__(self, key):
-    #     #print("get store", key)
-    #     return super.__getattr__(self, key)
-
     def get_by_id(self, id):
-        print("Get by id", id)
+        self.debug("Get by id", id)
         if id == '0':
             id = '1000'
         if id.find(".") != -1:
             new_id = id.split(".")[0]
-            print("Splitting from %s to %s" %(id, new_id))
+            self.debug("Splitting from %s to %s" %(id, new_id))
             id = new_id
         try:
             items = self.store[id]
             item = items[sorted(items.keys())[-1]]
             return item
         except KeyError:
-            print("Nothing for", id)
-            print(self.store.keys())
+            self.debug("Nothing for", id)
+            self.debug(self.store.keys())
             return None
 
     def add_store_item(self, id, item, priority=1): # Higher numbers are better
@@ -173,15 +168,14 @@ class ShortListStore(BackendStore):
         return self.store[id][priority]
 
     def make_playlist(self):
-        print("Source backend", self.source_backend)
+        self.debug("Source backend", self.source_backend)
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
         for x in range(50):
             while True:
                 if len(keys) == 0:
                     break
                 item = random.choice(keys)
-                #print("theirs", item, item.get_item(), item.item.res[0].__dict__, item.location)
-                print("theirs", item.__dict__, item.get_id())
+                self.debug("theirs", item.__dict__, item.get_id())
                 _, ext = os.path.splitext(item.location)
                 id = self.getnextID()
                 id = str(id)
@@ -197,26 +191,26 @@ class ShortListStore(BackendStore):
                 
                 entry.item = item.get_item()
                 entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
-                #self.store[id].item.artist = item.album.artist.name
-                #self.store[id].item.album = item.album.title
 
-                self.add_store_item(str(item.get_id()), entry, priority=0) # alias so we can find it later
+                # Alias so we can find it later
+                # There are some issues with duplicate ids, so we only use these if they're non-duplicate
+                # (hence the lower priority)
+                self.add_store_item(str(item.get_id()), entry, priority=0)
 
-                print("mine", entry, entry.item, entry.item.res[0].__dict__)
-                #print(dir(self.store[id]))
+                self.debug("mine", entry, entry.item, entry.item.res[0].__dict__)
                 self.root.add_child(entry)
                 self.root.update_id +=1
                 keys.remove(item)
                 break
             if len(keys) == 0:
                 break
-        print("children", self.root.children)
+        self.debug("children", self.root.children)
 
     def upnp_init(self):
         self.source_backend.upnp_init()
-        print("upnp_init", self.server)
+        self.debug("upnp_init", self.server)
         self.make_playlist()
-        print(self.store)
+        self.debug(self.store)
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(
@@ -230,8 +224,8 @@ class ShortListStore(BackendStore):
                 default=True)
             self.server.content_directory_server.set_variable(
                 0, 'SystemUpdateID', self.update_id)
-            # self.server.content_directory_server.set_variable(
-            #     0, 'SortCapabilities', '*')
+            self.server.content_directory_server.set_variable(
+                0, 'SortCapabilities', '*')
 
 Plugins().set("ShortListStore", ShortListStore)
 
@@ -242,13 +236,8 @@ coherence = Coherence(
      'plugin': [
           {'backend': 'ShortListStore',
           'name': 'Shortlist',
-          'medialocation': '/Users/palfrey/Dropbox/Music/Kittie',
+          'medialocation': '/Users/palfrey/Dropbox/Music/R.E.M',
           'mediadb': 'test.db'},
-          {'backend': 'MediaStore',
-          'name': 'mediadb',
-          'medialocation': '/Users/palfrey/Dropbox/Music/Kittie',
-          'mediadb': 'test.db'
-          }
      ]
      }
 )
