@@ -34,7 +34,7 @@ class ShortListItem(BackendItem):
         if mimetype == 'item' and path is None:
             path = os.path.join(parent.get_realpath(), str(self.id))
         self.location = path
-        self.debug("location", self.location)
+        self.debug("location %s", self.location)
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -116,7 +116,7 @@ class ShortListStore(BackendStore):
     def __init__(self, server, source_backend=None, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.name = kwargs.get('name', 'ShortlistStore')
-        self.next_id = 1000
+        self.next_id = 2000
         self.store = {}
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
@@ -143,39 +143,31 @@ class ShortListStore(BackendStore):
         return ret
 
     def get_by_id(self, id):
-        self.debug("Get by id", id)
+        self.debug("Get by id: %s" % id)
         if id == '0':
-            id = '1000'
-        if id.find(".") != -1:
-            new_id = id.split(".")[0]
-            self.debug("Splitting from %s to %s" %(id, new_id))
-            id = new_id
+            id = '2000'
         try:
-            items = self.store[id]
-            item = items[sorted(items.keys())[-1]]
-            return item
+            return self.store[id]
         except KeyError:
-            self.debug("Nothing for", id)
+            self.info("Nothing for %s", id)
             self.debug(self.store.keys())
             return None
 
-    def add_store_item(self, id, item, priority=1): # Higher numbers are better
-        if id not in self.store:
-            self.store[id] = {}
-        if priority in self.store[id]:
-            raise Exception("Already have %s at priority %d in store" % (id, priority))
-        self.store[id][priority] = item
-        return self.store[id][priority]
+    def add_store_item(self, id, item):
+        if id in self.store:
+            raise Exception("Already have %s in store" % id)
+        self.store[id] = item
+        return self.store[id]
 
     def make_playlist(self):
-        self.debug("Source backend", self.source_backend)
+        self.debug("Source backend %s", self.source_backend)
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
         for x in range(50):
             while True:
                 if len(keys) == 0:
                     break
                 item = random.choice(keys)
-                self.debug("theirs", item.__dict__, item.get_id())
+                self.debug("theirs: %s %s", item.__dict__, item.get_id())
                 _, ext = os.path.splitext(item.location)
                 id = self.getnextID()
                 id = str(id)
@@ -187,30 +179,28 @@ class ShortListStore(BackendStore):
 
                 entry = self.add_store_item(id, ShortListItem(
                             id, self.root, item.location, mimetype,
-                            self.urlbase, classChooser(mimetype), update=True, store=self), priority=1)
+                            self.urlbase, classChooser(mimetype), update=True, store=self))
                 
                 entry.item = item.get_item()
                 entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
 
-                # Alias so we can find it later
-                # There are some issues with duplicate ids, so we only use these if they're non-duplicate
-                # (hence the lower priority)
-                self.add_store_item(str(item.get_id()), entry, priority=0)
+                _, ext = os.path.splitext(item.location)
+                self.debug("mine %s %s %s", entry, entry.item.__dict__, entry.item.res[0].__dict__)
+                self.add_store_item(str(item.get_id()) + ext, entry)
 
-                self.debug("mine", entry, entry.item, entry.item.res[0].__dict__)
                 self.root.add_child(entry)
                 self.root.update_id +=1
                 keys.remove(item)
                 break
             if len(keys) == 0:
                 break
-        self.debug("children", self.root.children)
+        #self.debug("children: %s", self.root.children)
 
     def upnp_init(self):
         self.source_backend.upnp_init()
-        self.debug("upnp_init", self.server)
+        self.debug("upnp_init %s", self.server)
         self.make_playlist()
-        self.debug(self.store)
+        #self.debug(self.store)
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(
@@ -238,7 +228,7 @@ coherence = Coherence(
           'name': 'Shortlist',
           'medialocation': '/Users/palfrey/Dropbox/Music/R.E.M',
           'mediadb': 'test.db'},
-     ]
+      ]
      }
 )
 
