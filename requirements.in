@@ -9,3 +9,4 @@ pip-tools
 axiom
 tagpy
 netifaces
+twisted < 15
