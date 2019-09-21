@@ -11,6 +11,7 @@ import logging
 import random
 import os.path
 import re
+import argparse
 
 NUMS = re.compile('([0-9]+)')
 
@@ -219,15 +220,20 @@ class ShortListStore(BackendStore):
 
 Plugins().set("ShortListStore", ShortListStore)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--music-path", required=True, help="Path to your music files")
+parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
+parser.add_argument("-d", "--db", default="music.db", help="Path to music database")
+args = parser.parse_args()
+
 coherence = Coherence(
     {'logmode': 'warning',
      'controlpoint': 'yes',
-     'interface': 'en0',
      'plugin': [
           {'backend': 'ShortListStore',
-          'name': 'Shortlist',
-          'medialocation': '/Users/palfrey/Dropbox/Music/R.E.M',
-          'mediadb': 'test.db'},
+          'name': args.name,
+          'medialocation': args.music_path,
+          'mediadb': args.db},
       ]
      }
 )
