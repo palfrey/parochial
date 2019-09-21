@@ -116,7 +116,7 @@ class ShortListStore(BackendStore):
     def __init__(self, server, source_backend=None, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.name = kwargs.get('name', 'ShortlistStore')
-        self.next_id = 2000
+        self.next_id = 1000
         self.store = {}
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
@@ -145,7 +145,7 @@ class ShortListStore(BackendStore):
     def get_by_id(self, id):
         self.debug("Get by id: %s" % id)
         if id == '0':
-            id = '2000'
+            id = '1000'
         try:
             return self.store[id]
         except KeyError:
