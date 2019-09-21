@@ -165,15 +165,14 @@ class ShortListStore(BackendStore):
     
     def make_playlist(self):
         print("Source backend", self.source_backend)
-        print(dir(self.source_backend))
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
-        for x in range(5):
+        for x in range(50):
             while True:
                 if len(keys) == 0:
-                    raise Exception("Ran out")
+                    break
                 item = random.choice(keys)
                 #print("theirs", item, item.get_item(), item.item.res[0].__dict__, item.location)
-                print("theirs", item.__dict__, dir(item), item.get_id())
+                print("theirs", item.__dict__, item.get_id())
                 _, ext = os.path.splitext(item.location)
                 id = self.getnextID()
                 id = str(id)
@@ -199,6 +198,8 @@ class ShortListStore(BackendStore):
                 self.root.add_child(self.store[id])
                 self.root.update_id +=1
                 keys.remove(item)
+                break
+            if len(keys) == 0:
                 break
         print("children", self.root.children)
 
