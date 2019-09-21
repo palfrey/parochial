@@ -121,9 +121,10 @@ class ShortListStore(BackendStore):
         self.store = {}
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
-        self.root = self.store[id] = ShortListItem(
+        self.root = ShortListItem(
             id, None, 'media', 'root',
             self.urlbase, UPnPClass, update=True, store=self)
+        self.add_store_item(id, self.root)
 
         self.source_backend = MediaStore(server, **kwargs)
 
@@ -155,14 +156,22 @@ class ShortListStore(BackendStore):
             print("Splitting from %s to %s" %(id, new_id))
             id = new_id
         try:
-            item = self.store[id]
-            print(item)
+            items = self.store[id]
+            item = items[sorted(items.keys())[-1]]
             return item
         except KeyError:
             print("Nothing for", id)
             print(self.store.keys())
             return None
-    
+
+    def add_store_item(self, id, item, priority=1): # Higher numbers are better
+        if id not in self.store:
+            self.store[id] = {}
+        if priority in self.store[id]:
+            raise Exception("Already have %s at priority %d in store" % (id, priority))
+        self.store[id][priority] = item
+        return self.store[id][priority]
+
     def make_playlist(self):
         print("Source backend", self.source_backend)
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
@@ -182,20 +191,20 @@ class ShortListStore(BackendStore):
                 except KeyError:
                     mimetype = 'audio/mpeg'
 
-                self.store[id] = ShortListItem(
+                entry = self.add_store_item(id, ShortListItem(
                             id, self.root, item.location, mimetype,
-                            self.urlbase, classChooser(mimetype), update=True, store=self)
+                            self.urlbase, classChooser(mimetype), update=True, store=self), priority=1)
                 
-                self.store[id].item = item.get_item()
-                self.store[id].item.title = "%s - %s" % (item.album.artist.name, item.title)
+                entry.item = item.get_item()
+                entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
                 #self.store[id].item.artist = item.album.artist.name
                 #self.store[id].item.album = item.album.title
 
-                self.store[str(item.get_id())] = self.store[id] # alias so we can find it later
+                self.add_store_item(str(item.get_id()), entry, priority=0) # alias so we can find it later
 
-                print("mine", self.store[id], self.store[id].item, self.store[id].item.res[0].__dict__)
+                print("mine", entry, entry.item, entry.item.res[0].__dict__)
                 #print(dir(self.store[id]))
-                self.root.add_child(self.store[id])
+                self.root.add_child(entry)
                 self.root.update_id +=1
                 keys.remove(item)
                 break
