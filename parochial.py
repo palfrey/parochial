@@ -101,25 +101,26 @@ class ShortListStore(BackendStore):
 
     implements = ['MediaServer']
 
-    description = '''MediaServer exporting files from the file-system'''
+    description = '''Subset playlist backend based on a mediadb backend to workaround track limits'''
 
     options = [
-        {'option': 'name', 'type': 'string', 'default': 'my media',
+        {'option': 'name', 'type': 'string', 'default': 'ShortlistStore',
          'help': 'the name under this MediaServer '
                  'shall show up with on other UPnP clients'},
-        {'option': 'source_backend', 'type': 'uuid',
-         'help': 'other backend to use as raw source'},
+        {'option': 'medialocation', 'type': 'string',
+         'help': 'path to media'},
+        {'option': 'mediadb', 'type': 'string',
+         'help': 'path to media database (will be created if doesn\'t exist)'},
+        {'option': 'trackcount', 'type': 'integer',
+         'help': 'tracks in the playlist', 'default': 50},
     ]
 
-    coherences = {}
-    source_backends = {}
-
-    def __init__(self, server, source_backend=None, **kwargs):
+    def __init__(self, server, name="ShortlistStore", trackcount=50, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
-        self.name = kwargs.get('name', 'ShortlistStore')
+        self.name = name
         self.next_id = 1000
         self.store = {}
-        self.trackcount = kwargs.get('trackcount')
+        self.trackcount = trackcount
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
         self.root = ShortListItem(
@@ -196,13 +197,11 @@ class ShortListStore(BackendStore):
                 break
             if len(keys) == 0:
                 break
-        #self.debug("children: %s", self.root.children)
 
     def upnp_init(self):
         self.source_backend.upnp_init()
         self.debug("upnp_init %s", self.server)
         self.make_playlist()
-        #self.debug(self.store)
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(
