@@ -119,6 +119,7 @@ class ShortListStore(BackendStore):
         self.name = kwargs.get('name', 'ShortlistStore')
         self.next_id = 1000
         self.store = {}
+        self.trackcount = kwargs.get('trackcount')
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
         self.root = ShortListItem(
@@ -163,7 +164,7 @@ class ShortListStore(BackendStore):
     def make_playlist(self):
         self.debug("Source backend %s", self.source_backend)
         keys = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
-        for x in range(50):
+        for x in range(self.trackcount):
             while True:
                 if len(keys) == 0:
                     break
@@ -223,17 +224,21 @@ Plugins().set("ShortListStore", ShortListStore)
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--music-path", required=True, help="Path to your music files")
 parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
-parser.add_argument("-d", "--db", default="music.db", help="Path to music database")
+parser.add_argument("-d", "--db", default="music.db", help="Path to music database (default: music.db)")
+parser.add_argument("-i", "--item-count", default=50, type=int, help="Number of tracks in the playlisty (default: 50)")
 args = parser.parse_args()
 
 coherence = Coherence(
     {'logmode': 'warning',
      'controlpoint': 'yes',
      'plugin': [
-          {'backend': 'ShortListStore',
-          'name': args.name,
-          'medialocation': args.music_path,
-          'mediadb': args.db},
+          {
+            'backend': 'ShortListStore',
+            'name': args.name,
+            'medialocation': args.music_path,
+            'mediadb': args.db,
+            'trackcount': args.item_count
+          },
       ]
      }
 )
