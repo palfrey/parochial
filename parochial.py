@@ -3,24 +3,13 @@ from twisted.internet import reactor
 from coherence.base import Coherence, Plugins
 from coherence.backend import BackendItem, BackendStore
 from coherence.backends.mediadb_storage import MediaStore, Track, KNOWN_AUDIO_TYPES
-from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, AudioItem
+from coherence.upnp.core.DIDLLite import classChooser, Container, Resource
 from twisted.python.filepath import FilePath
 import coherence.extern.louie as louie
 
-import logging
 import random
 import os.path
-import re
 import argparse
-
-NUMS = re.compile('([0-9]+)')
-
-def _natural_key(s):
-    # strip the spaces
-    s = s.get_name().strip()
-    # <class 'TypeError'>: '<' not supported between instances of 'int' and 'str'
-    return [part.isdigit() and part or part.lower() for part in
-            NUMS.split(s)]
 
 class ShortListItem(BackendItem):
     logCategory = 'shortlist_item'
@@ -49,7 +38,6 @@ class ShortListItem(BackendItem):
             self.item.childCount = 0
         self.child_count = 0
         self.children = []
-        self.sorted = False
 
     def get_id(self):
         return self.id
@@ -61,7 +49,6 @@ class ShortListItem(BackendItem):
             self.item.childCount += 1
         if update:
             self.update_id += 1
-        self.sorted = False
 
     def get_name(self):
         if hasattr(self, "display"):
@@ -73,9 +60,6 @@ class ShortListItem(BackendItem):
 
     def get_children(self, start=0, request_count=0):
         try:
-            if not self.sorted:
-                self.children.sort(key=_natural_key)
-                self.sorted = True
             if request_count == 0:
                 return self.children[start:]
             else:
@@ -187,7 +171,6 @@ class ShortListStore(BackendStore):
                 entry.item = item.get_item()
                 entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
 
-                _, ext = os.path.splitext(item.location)
                 self.debug("mine %s %s %s", entry, entry.item.__dict__, entry.item.res[0].__dict__)
                 self.add_store_item(str(item.get_id()) + ext, entry)
 
