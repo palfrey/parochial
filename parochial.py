@@ -1,5 +1,5 @@
 from __future__ import print_function
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from coherence.base import Coherence, Plugins
 from coherence.backend import BackendItem, BackendStore
 from coherence.backends.mediadb_storage import MediaStore, Track, KNOWN_AUDIO_TYPES
@@ -36,17 +36,22 @@ class ShortListItem(BackendItem):
         self.item = UPnPClass(object_id, parent_id, self.get_name())
         if isinstance(self.item, Container):
             self.item.childCount = 0
-        self.child_count = 0
         self.children = []
+        self.store = store
 
     def get_id(self):
         return self.id
 
     def add_child(self, child, update=False):
         self.children.append(child)
-        self.child_count += 1
         if isinstance(self.item, Container):
             self.item.childCount += 1
+        if update:
+            self.update_id += 1
+
+    def remove_child(self, child, update=True):
+        self.children.remove(child)
+        self.store.remove_item(child)
         if update:
             self.update_id += 1
 
@@ -60,6 +65,7 @@ class ShortListItem(BackendItem):
 
     def get_children(self, start=0, request_count=0):
         try:
+            self.debug("get_children %d %d", start, request_count)
             if request_count == 0:
                 return self.children[start:]
             else:
@@ -70,11 +76,7 @@ class ShortListItem(BackendItem):
 
     def get_child_count(self):
         self.debug("get_child_count")
-        return self.child_count
-
-    def __getattr__(self, key):
-        #print("get item", key)
-        return super.__getattr__(self, key)
+        return len(self.children)
 
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + \
@@ -97,14 +99,17 @@ class ShortListStore(BackendStore):
          'help': 'path to media database (will be created if doesn\'t exist)'},
         {'option': 'trackcount', 'type': 'integer',
          'help': 'tracks in the playlist', 'default': 50},
+        {'option': 'updateFrequency', 'type': 'integer',
+         'help': 'track update frequency in seconds', 'default': 300},
     ]
 
-    def __init__(self, server, name="ShortlistStore", trackcount=50, **kwargs):
+    def __init__(self, server, name="ShortlistStore", trackcount=50, updateFrequency=300, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.name = name
         self.next_id = 1000
         self.store = {}
         self.trackcount = trackcount
+        self.updateFrequency = updateFrequency
         UPnPClass = classChooser('root')
         id = str(self.getnextID())
         self.root = ShortListItem(
@@ -141,10 +146,37 @@ class ShortListStore(BackendStore):
             return None
 
     def add_store_item(self, id, item):
-        if id in self.store:
-            raise Exception("Already have %s in store" % id)
-        self.store[id] = item
+        # Working assumption: duplicate ids are the same item
+        if id not in self.store:
+            self.store[id] = item
         return self.store[id]
+
+    def remove_item(self, item):
+        del self.store[item.id]
+
+    def add_new_entry(self, item):
+        self.debug("theirs: %s %s", item.__dict__, item.get_id())
+        _, ext = os.path.splitext(item.location)
+        id = self.getnextID()
+        id = str(id)
+
+        try:
+            mimetype = KNOWN_AUDIO_TYPES[ext]
+        except KeyError:
+            mimetype = 'audio/mpeg'
+
+        entry = self.add_store_item(id, ShortListItem(
+                    id, self.root, item.location, mimetype,
+                    self.urlbase, classChooser(mimetype), update=True, store=self))
+
+        entry.item = item.get_item()
+        entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
+
+        self.debug("mine %s %s %s", entry, entry.item.__dict__, entry.item.res[0].__dict__)
+        entry.item_key = str(item.get_id()) + ext
+        self.add_store_item(entry.item_key, entry)
+
+        self.root.add_child(entry, update=True)
 
     def make_playlist(self):
         self.debug("Source backend %s", self.source_backend)
@@ -154,37 +186,37 @@ class ShortListStore(BackendStore):
                 if len(keys) == 0:
                     break
                 item = random.choice(keys)
-                self.debug("theirs: %s %s", item.__dict__, item.get_id())
-                _, ext = os.path.splitext(item.location)
-                id = self.getnextID()
-                id = str(id)
-
-                try:
-                    mimetype = KNOWN_AUDIO_TYPES[ext]
-                except KeyError:
-                    mimetype = 'audio/mpeg'
-
-                entry = self.add_store_item(id, ShortListItem(
-                            id, self.root, item.location, mimetype,
-                            self.urlbase, classChooser(mimetype), update=True, store=self))
-                
-                entry.item = item.get_item()
-                entry.item.title = "%s - %s" % (item.album.artist.name, item.title)
-
-                self.debug("mine %s %s %s", entry, entry.item.__dict__, entry.item.res[0].__dict__)
-                self.add_store_item(str(item.get_id()) + ext, entry)
-
-                self.root.add_child(entry)
-                self.root.update_id +=1
+                self.add_new_entry(item)
                 keys.remove(item)
                 break
             if len(keys) == 0:
                 break
 
+    def updatePlaylist(self):
+        oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
+        existing = [int(x.item.id) for x in self.root.children]
+        possible = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
+        while True:
+            item = random.choice(possible)
+            if item.get_id() in existing:
+                self.debug("duplicate %s", item.get_id())
+                continue
+            # Don't remove the music in case there's a cached client around
+            self.root.remove_child(oldest)
+            self.debug("removed %s %s", oldest.id, oldest.item_key)
+            self.debug("adding new %s", item)
+            self.add_new_entry(item)
+            self.update_id +=1
+            self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', (self.root.get_id(), self.root.update_id))
+            break
+
     def upnp_init(self):
         self.source_backend.upnp_init()
         self.debug("upnp_init %s", self.server)
         self.make_playlist()
+        l = task.LoopingCall(self.updatePlaylist)
+        l.start(self.updateFrequency)
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(
@@ -208,6 +240,7 @@ parser.add_argument("-m", "--music-path", required=True, help="Path to your musi
 parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
 parser.add_argument("-d", "--db", default="music.db", help="Path to music database (default: music.db)")
 parser.add_argument("-i", "--item-count", default=50, type=int, help="Number of tracks in the playlist (default: 50)")
+parser.add_argument("-u", "--update-frequency", default=300, type=int, help="Change out a track every N seconds (default: 300)")
 args = parser.parse_args()
 
 coherence = Coherence(
@@ -219,7 +252,8 @@ coherence = Coherence(
             'name': args.name,
             'medialocation': args.music_path,
             'mediadb': args.db,
-            'trackcount': args.item_count
+            'trackcount': args.item_count,
+            'updateFrequency': args.update_frequency,
           },
       ]
      }
