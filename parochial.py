@@ -224,7 +224,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--music-path", required=True, help="Path to your music files")
 parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
 parser.add_argument("-d", "--db", default="music.db", help="Path to music database (default: music.db)")
-parser.add_argument("-i", "--item-count", default=50, type=int, help="Number of tracks in the playlisty (default: 50)")
+parser.add_argument("-i", "--item-count", default=50, type=int, help="Number of tracks in the playlist (default: 50)")
 args = parser.parse_args()
 
 coherence = Coherence(
