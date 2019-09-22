@@ -1,8 +1,9 @@
+# Awaiting 0.7.4 release https://github.com/unintended/Cohen/issues/10
 -e ./Cohen
 
 # For https://github.com/lobocv/eventdispatcher/commit/b238ee18fa511c54090c21c7801564edd0dd95ef#diff-3e88a25682c0094a8dfc3cabbaa05dcb to fix clock issue
-# >= 1.9.0 should be enough, but pip-compile fails if I do that
-eventdispatcher == 1.9.0
+# The < 1.9.5 is because of https://github.com/lobocv/eventdispatcher/issues/2
+eventdispatcher >= 1.9.0,<1.9.5
 
 pip-tools
 

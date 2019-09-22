@@ -20,7 +20,7 @@ contextlib2==0.5.5        # via importlib-metadata
 cryptography==2.7         # via pyopenssl
 enum34==1.1.6             # via cryptography
 epsilon==0.7.3            # via axiom
-eventdispatcher==1.9.0
+eventdispatcher==1.9.4
 funcsigs==1.0.2           # via pytest
 future==0.17.1            # via eventdispatcher
 futures==3.3.0            # via livestreamer
@@ -33,7 +33,7 @@ lxml==4.3.4
 more-itertools==5.0.0     # via pytest
 netifaces==0.10.9
 nose==1.3.7               # via louie
-numpy==1.16.4             # via eventdispatcher
+numpy==1.16.5             # via eventdispatcher
 packaging==19.0           # via pytest
 pathlib2==2.3.4           # via importlib-metadata, pytest
 pip-tools==3.8.0
