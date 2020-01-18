@@ -186,7 +186,12 @@ class ShortListStore(BackendStore):
                 if len(keys) == 0:
                     break
                 item = random.choice(keys)
-                self.add_new_entry(item)
+                try:
+                    self.add_new_entry(item)
+                except OSError, e:
+                    self.warning("Can't get to %s, got exception %s", item, e)
+                    # Can't get to the item in some way, so skip
+                    continue
                 keys.remove(item)
                 break
             if len(keys) == 0:
@@ -205,7 +210,12 @@ class ShortListStore(BackendStore):
             self.root.remove_child(oldest)
             self.debug("removed %s %s", oldest.id, oldest.item_key)
             self.debug("adding new %s", item)
-            self.add_new_entry(item)
+            try:
+                self.add_new_entry(item)
+            except OSError, e:
+                # Can't get to the item in some way, so skip
+                self.warning("Can't get to %s, got exception %s", item, e)
+                continue
             self.update_id +=1
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', (self.root.get_id(), self.root.update_id))
