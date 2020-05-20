@@ -207,6 +207,8 @@ class ShortListStore(BackendStore):
             oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
         existing = [int(x.item.id) for x in self.root.children]
         possible = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
+        if len(possible) == 0:
+            return
         while True:
             item = random.choice(possible)
             if item.get_id() in existing:
