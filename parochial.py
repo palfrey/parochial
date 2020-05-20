@@ -52,9 +52,9 @@ class ShortListItem(BackendItem):
     def remove_child(self, child, update=True):
         try:
             self.children.remove(child)
+            self.store.remove_item(child)
         except ValueError:
             self.warn("Child item %s was already missing", child) # Generally should exist, but sometimes it doesn't. Shouldn't crash
-        self.store.remove_item(child)
         if update:
             self.update_id += 1
 
