@@ -201,7 +201,10 @@ class ShortListStore(BackendStore):
                 break
 
     def updatePlaylist(self):
-        oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
+        if len(self.root.children) == 0:
+            oldest = None
+        else:
+            oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
         existing = [int(x.item.id) for x in self.root.children]
         possible = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
         while True:
@@ -210,8 +213,9 @@ class ShortListStore(BackendStore):
                 self.debug("duplicate %s", item.get_id())
                 continue
             # Don't remove the music in case there's a cached client around
-            self.root.remove_child(oldest)
-            self.debug("removed %s %s", oldest.id, oldest.item_key)
+            if oldest != None:
+                self.root.remove_child(oldest)
+                self.debug("removed %s %s", oldest.id, oldest.item_key)
             self.debug("adding new %s", item)
             try:
                 self.add_new_entry(item)
