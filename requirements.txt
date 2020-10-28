@@ -5,24 +5,23 @@
 #    pip-compile
 #
 -e git+https://github.com/inducer/tagpy.git#egg=tagpy
-asn1crypto==0.24.0        # via cryptography
 atomicwrites==1.3.0       # via pytest
 attrs==19.1.0             # via automat, pytest, twisted
 automat==0.8.0            # via twisted
-axiom==0.7.5
+axiom==0.7.5              # via -r requirements.in
 certifi==2019.6.16        # via requests
 cffi==1.12.3              # via cryptography
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools
-cohen==0.7.4
+cohen==0.7.4              # via -r requirements.in
 configobj==5.0.6          # via cohen
 configparser==3.7.4       # via importlib-metadata
 constantly==15.1.0        # via twisted
 contextlib2==0.5.5        # via importlib-metadata
-cryptography==2.7         # via pyopenssl
+cryptography==3.2         # via pyopenssl
 enum34==1.1.6             # via cryptography
 epsilon==0.7.3            # via axiom
-eventdispatcher==1.9.4
+eventdispatcher==1.9.4    # via -r requirements.in
 funcsigs==1.0.2           # via pytest
 future==0.17.1            # via eventdispatcher
 futures==3.3.0            # via livestreamer
@@ -35,25 +34,25 @@ livestreamer==1.12.2      # via cohen
 louie==1.1                # via cohen
 lxml==4.3.4               # via cohen
 more-itertools==5.0.0     # via pytest
-netifaces==0.10.9
+netifaces==0.10.9         # via -r requirements.in
 nose==1.3.7               # via louie
 numpy==1.16.5             # via eventdispatcher
 packaging==19.0           # via pytest
 pathlib2==2.3.4           # via importlib-metadata, pytest
-pip-tools==4.3.0
+pip-tools==4.3.0          # via -r requirements.in
 pluggy==0.12.0            # via pytest
 py==1.8.0                 # via pytest
 pycparser==2.19           # via cffi
 pyhamcrest==1.10.1        # via twisted
 pyopenssl==19.0.0         # via cohen, epsilon
 pyparsing==2.4.1.1        # via packaging
-pytest==4.6.4
+pytest==4.6.4             # via tagpy
 python-dateutil==2.8.0    # via cohen
 requests==2.22.0          # via livestreamer
 scandir==1.10.0           # via pathlib2
 singledispatch==3.4.0.3   # via livestreamer
 six==1.12.0               # via automat, configobj, cryptography, more-itertools, packaging, pathlib2, pip-tools, pyhamcrest, pyopenssl, pytest, python-dateutil, singledispatch
-twisted==19.7.0
+twisted==19.7.0           # via -r requirements.in, axiom, cohen, epsilon
 urllib3==1.25.3           # via requests
 wcwidth==0.1.7            # via pytest
 zipp==0.5.2               # via importlib-metadata
