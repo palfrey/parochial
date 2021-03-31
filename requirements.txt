@@ -67,7 +67,7 @@ livestreamer==1.12.2
     # via cohen
 louie==1.1
     # via cohen
-lxml==4.6.2
+lxml==4.6.3
     # via cohen
 more-itertools==5.0.0
     # via pytest
