@@ -129,7 +129,7 @@ twisted==19.7.0
     #   axiom
     #   cohen
     #   epsilon
-urllib3==1.25.3
+urllib3==1.25.8
     # via requests
 wcwidth==0.1.7
     # via pytest
