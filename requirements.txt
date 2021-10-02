@@ -83,7 +83,7 @@ pathlib2==2.3.4
     # via
     #   importlib-metadata
     #   pytest
-pip-tools==4.3.0
+pip-tools==5.5.0
     # via -r requirements.in
 pluggy==0.12.0
     # via pytest
