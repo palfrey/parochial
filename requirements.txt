@@ -103,7 +103,7 @@ pytest==4.6.4
     # via tagpy
 python-dateutil==2.8.0
     # via cohen
-requests==2.22.0
+requests==2.26.0
     # via livestreamer
 scandir==1.10.0
     # via pathlib2
@@ -129,7 +129,7 @@ twisted==19.7.0
     #   axiom
     #   cohen
     #   epsilon
-urllib3==1.25.8
+urllib3==1.26.7
     # via requests
 wcwidth==0.1.7
     # via pytest
