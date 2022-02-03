@@ -1,4 +1,4 @@
-Cohen >= 0.7.4
+cohen3
 
 # For https://github.com/lobocv/eventdispatcher/commit/b238ee18fa511c54090c21c7801564edd0dd95ef#diff-3e88a25682c0094a8dfc3cabbaa05dcb to fix clock issue
 # The < 1.9.5 is because of https://github.com/lobocv/eventdispatcher/issues/2
@@ -6,10 +6,11 @@ eventdispatcher >= 1.9.0,<1.9.5
 
 pip-tools
 
-axiom
-tagpy
-netifaces
-twisted < 20
+# Need https://github.com/twisted/axiom/pull/119 for Python 3 support
+git+https://github.com/twisted/axiom.git@f0fce994f894b0aa767daa392ac0a4ce9dbf9717#egg=axiom
 
-# Because last release is very broken. See https://github.com/inducer/tagpy/issues/5
--e git+https://github.com/inducer/tagpy.git#egg=tagpy
+netifaces
+twisted
+
+# Because last release is very broken and eventually I should take it over or something...
+git+https://github.com/palfrey/tagpy.git#egg=tagpy
