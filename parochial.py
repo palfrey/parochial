@@ -261,7 +261,7 @@ parser.add_argument("-u", "--update-frequency", default=300, type=int, help="Cha
 args = parser.parse_args()
 
 coherence = Coherence(
-    {'logmode': 'warning',
+    {'logging': {'level': 'warning', 'subsystem': [{"active":"yes", "name": 'shortlist_store', 'level': 'debug'}]},
      'controlpoint': 'yes',
      'plugin': [
           {
