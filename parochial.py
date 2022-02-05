@@ -125,7 +125,7 @@ class ShortListStore(BackendStore):
                                  '16': '0',
                                  '17': '0'
                                  })
-        self.on_init_completed()
+        self.init_completed = True
 
     def __repr__(self):
         return self.__class__.__name__
