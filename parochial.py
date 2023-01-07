@@ -1,11 +1,9 @@
-from __future__ import print_function
 from twisted.internet import reactor, task
 from coherence.base import Coherence, Plugins
 from coherence.backend import BackendItem, BackendStore
 from coherence.backends.mediadb_storage import MediaStore, Track, KNOWN_AUDIO_TYPES
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource
 from twisted.python.filepath import FilePath
-import coherence.extern.louie as louie
 
 import random
 import os.path
@@ -127,7 +125,7 @@ class ShortListStore(BackendStore):
                                  '16': '0',
                                  '17': '0'
                                  })
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        self.init_completed = True
 
     def __repr__(self):
         return self.__class__.__name__
@@ -145,7 +143,7 @@ class ShortListStore(BackendStore):
             return self.store[id]
         except KeyError:
             self.info("Nothing for %s", id)
-            self.debug(self.store.keys())
+            self.debug(list(self.store.keys()))
             return None
 
     def add_store_item(self, id, item):
@@ -191,7 +189,7 @@ class ShortListStore(BackendStore):
                 item = random.choice(keys)
                 try:
                     self.add_new_entry(item)
-                except OSError, e:
+                except OSError as e:
                     self.warning("Can't get to %s, got exception %s", item, e)
                     # Can't get to the item in some way, so skip
                     continue
@@ -221,7 +219,7 @@ class ShortListStore(BackendStore):
             self.debug("adding new %s", item)
             try:
                 self.add_new_entry(item)
-            except OSError, e:
+            except OSError as e:
                 # Can't get to the item in some way, so skip
                 self.warning("Can't get to %s, got exception %s", item, e)
                 continue
@@ -263,7 +261,7 @@ parser.add_argument("-u", "--update-frequency", default=300, type=int, help="Cha
 args = parser.parse_args()
 
 coherence = Coherence(
-    {'logmode': 'warning',
+    {'logging': {'level': 'warning', 'subsystem': [{"active":"yes", "name": 'shortlist_store', 'level': 'debug'}]},
      'controlpoint': 'yes',
      'plugin': [
           {
