@@ -142,13 +142,14 @@ class ShortListStore(BackendStore):
 
     def __init__(
         self,
-        server,
-        name="ShortlistStore",
-        trackcount=50,
-        updateFrequency=300,
+        server: Coherence,
+        name: str = "ShortlistStore",
+        trackcount: int = 50,
+        updateFrequency: int = 300,
         **kwargs
     ):
         BackendStore.__init__(self, server, **kwargs)
+        print(server)
         self.name = name
         self.next_id = 1000
         self.store = {}
@@ -311,52 +312,56 @@ class ShortListStore(BackendStore):
             )
 
 
-Plugins().set("ShortListStore", ShortListStore)
+if __name__ == "__main__":
+    Plugins().set("ShortListStore", ShortListStore)
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-m", "--music-path", required=True, help="Path to your music files"
-)
-parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
-parser.add_argument(
-    "-d", "--db", default="music.db", help="Path to music database (default: music.db)"
-)
-parser.add_argument(
-    "-i",
-    "--item-count",
-    default=50,
-    type=int,
-    help="Number of tracks in the playlist (default: 50)",
-)
-parser.add_argument(
-    "-u",
-    "--update-frequency",
-    default=300,
-    type=int,
-    help="Change out a track every N seconds (default: 300)",
-)
-args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m", "--music-path", required=True, help="Path to your music files"
+    )
+    parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
+    parser.add_argument(
+        "-d",
+        "--db",
+        default="music.db",
+        help="Path to music database (default: music.db)",
+    )
+    parser.add_argument(
+        "-i",
+        "--item-count",
+        default=50,
+        type=int,
+        help="Number of tracks in the playlist (default: 50)",
+    )
+    parser.add_argument(
+        "-u",
+        "--update-frequency",
+        default=300,
+        type=int,
+        help="Change out a track every N seconds (default: 300)",
+    )
+    args = parser.parse_args()
 
-coherence = Coherence(
-    {
-        "logging": {
-            "level": "warning",
-            "subsystem": [
-                {"active": "yes", "name": "shortlist_store", "level": "debug"}
-            ],
-        },
-        "controlpoint": "yes",
-        "plugin": [
-            {
-                "backend": "ShortListStore",
-                "name": args.name,
-                "medialocation": args.music_path,
-                "mediadb": args.db,
-                "trackcount": args.item_count,
-                "updateFrequency": args.update_frequency,
+    coherence = Coherence(
+        {
+            "logging": {
+                "level": "warning",
+                "subsystem": [
+                    {"active": "yes", "name": "shortlist_store", "level": "debug"}
+                ],
             },
-        ],
-    }
-)
+            "controlpoint": "yes",
+            "plugin": [
+                {
+                    "backend": "ShortListStore",
+                    "name": args.name,
+                    "medialocation": args.music_path,
+                    "mediadb": args.db,
+                    "trackcount": args.item_count,
+                    "updateFrequency": args.update_frequency,
+                },
+            ],
+        }
+    )
 
-reactor.run()
+    reactor.run()

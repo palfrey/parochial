@@ -13,3 +13,9 @@ git+https://github.com/twisted/axiom.git@f0fce994f894b0aa767daa392ac0a4ce9dbf971
 netifaces
 twisted
 tagpy
+
+pytest
+pytest-cov
+pytest-watch
+pytest-twisted
+pytest-vcr

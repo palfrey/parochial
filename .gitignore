@@ -1,2 +1,5 @@
 music.db/
 .vscode/
+__pycache__/
+tests/media.db
+bar.db/

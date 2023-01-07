@@ -12,6 +12,7 @@ attrs==21.4.0
     # via
     #   automat
     #   axiom
+    #   pytest
     #   service-identity
     #   twisted
     #   txpasslib
@@ -45,6 +46,8 @@ eventdispatcher==1.9.4
     # via
     #   -r requirements.in
     #   cohen3
+exceptiongroup==1.1.0
+    # via pytest
 filelock==3.9.0
     # via virtualenv
 future==0.17.1
@@ -59,6 +62,8 @@ idna==2.8
     #   twisted
 incremental==21.3.0
     # via twisted
+iniconfig==2.0.0
+    # via pytest
 lxml==4.6.3
     # via cohen3
 netifaces==0.10.9
@@ -67,6 +72,8 @@ nodeenv==1.7.0
     # via pre-commit
 numpy==1.22.1
     # via eventdispatcher
+packaging==22.0
+    # via pytest
 passlib==1.7.4
     # via txpasslib
 pep517==0.12.0
@@ -75,6 +82,8 @@ pip-tools==6.4.0
     # via -r requirements.in
 platformdirs==2.6.2
     # via virtualenv
+pluggy==1.0.0
+    # via pytest
 pre-commit==2.21.0
     # via -r requirements.in
 pyasn1==0.4.8
@@ -89,6 +98,8 @@ pyopenssl==19.0.0
     # via
     #   cohen3
     #   twisted
+pytest==7.2.0
+    # via -r requirements.in
 python-dateutil==2.8.0
     # via cohen3
 pyyaml==6.0
@@ -109,7 +120,9 @@ six==1.12.0
 tagpy==2022.1
     # via -r requirements.in
 tomli==2.0.0
-    # via pep517
+    # via
+    #   pep517
+    #   pytest
 twisted[tls]==21.7.0
     # via
     #   -r requirements.in
