@@ -12,6 +12,4 @@ git+https://github.com/twisted/axiom.git@f0fce994f894b0aa767daa392ac0a4ce9dbf971
 
 netifaces
 twisted
-
-# Because last release is very broken and eventually I should take it over or something...
-git+https://github.com/palfrey/tagpy.git#egg=tagpy
+tagpy
