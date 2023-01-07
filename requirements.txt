@@ -23,6 +23,8 @@ cffi==1.12.3
     # via
     #   argon2-cffi-bindings
     #   cryptography
+cfgv==3.3.1
+    # via pre-commit
 click==7.0
     # via pip-tools
 cohen3==0.9.3
@@ -35,16 +37,22 @@ cryptography==3.3.2
     # via
     #   pyopenssl
     #   service-identity
+distlib==0.3.6
+    # via virtualenv
 epsilon==0.8.0
     # via axiom
 eventdispatcher==1.9.4
     # via
     #   -r requirements.in
     #   cohen3
+filelock==3.9.0
+    # via virtualenv
 future==0.17.1
     # via eventdispatcher
 hyperlink==19.0.0
     # via twisted
+identify==2.5.12
+    # via pre-commit
 idna==2.8
     # via
     #   hyperlink
@@ -55,6 +63,8 @@ lxml==4.6.3
     # via cohen3
 netifaces==0.10.9
     # via -r requirements.in
+nodeenv==1.7.0
+    # via pre-commit
 numpy==1.22.1
     # via eventdispatcher
 passlib==1.7.4
@@ -62,6 +72,10 @@ passlib==1.7.4
 pep517==0.12.0
     # via pip-tools
 pip-tools==6.4.0
+    # via -r requirements.in
+platformdirs==2.6.2
+    # via virtualenv
+pre-commit==2.21.0
     # via -r requirements.in
 pyasn1==0.4.8
     # via
@@ -77,6 +91,8 @@ pyopenssl==19.0.0
     #   twisted
 python-dateutil==2.8.0
     # via cohen3
+pyyaml==6.0
+    # via pre-commit
 service-identity==18.1.0
     # via
     #   cohen3
@@ -105,6 +121,8 @@ txpasslib==0.1.0
     # via axiom
 typing-extensions==4.0.1
     # via twisted
+virtualenv==20.17.1
+    # via pre-commit
 wheel==0.37.1
     # via pip-tools
 zope.interface==5.4.0
