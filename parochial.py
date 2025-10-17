@@ -149,7 +149,6 @@ class ShortListStore(BackendStore):
         **kwargs
     ):
         BackendStore.__init__(self, server, **kwargs)
-        print(server)
         self.name = name
         self.next_id = 1000
         self.store = {}
@@ -256,14 +255,21 @@ class ShortListStore(BackendStore):
         else:
             oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
         existing = [int(x.item.id) for x in self.root.children]
-        possible = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
-        if len(possible) == 0:
-            return
+        possible = dict(
+            [
+                (t.get_id(), t)
+                for t in self.source_backend.db.query(Track, sort=Track.title.ascending)
+            ]
+        )
         while True:
-            item = random.choice(possible)
-            if item.get_id() in existing:
-                self.debug("duplicate %s", item.get_id())
+            options = [p for p in possible.keys() if p not in existing]
+            if len(options) == 0:
+                return
+            item_id = random.choice(options)
+            if item_id in existing:
+                self.debug("duplicate %s", item_id)
                 continue
+            item = possible[item_id]
             # Don't remove the music in case there's a cached client around
             if oldest is not None:
                 self.root.remove_child(oldest)
