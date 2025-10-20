@@ -9,3 +9,6 @@ sync: requirements.txt .venv/bin/activate
 
 test: sync
 	uv run pytest -vvv
+
+pre-commit: sync
+	uv run pre-commit run -a
