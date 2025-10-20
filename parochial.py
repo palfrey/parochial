@@ -142,10 +142,10 @@ class ShortListStore(BackendStore):
 
     def __init__(
         self,
-        server,
-        name="ShortlistStore",
-        trackcount=50,
-        updateFrequency=300,
+        server: Coherence,
+        name: str = "ShortlistStore",
+        trackcount: int = 50,
+        updateFrequency: int = 300,
         **kwargs
     ):
         BackendStore.__init__(self, server, **kwargs)
@@ -255,14 +255,21 @@ class ShortListStore(BackendStore):
         else:
             oldest = sorted(self.root.children, key=lambda item: int(item.id))[0]
         existing = [int(x.item.id) for x in self.root.children]
-        possible = list(self.source_backend.db.query(Track, sort=Track.title.ascending))
-        if len(possible) == 0:
-            return
+        possible = dict(
+            [
+                (t.get_id(), t)
+                for t in self.source_backend.db.query(Track, sort=Track.title.ascending)
+            ]
+        )
         while True:
-            item = random.choice(possible)
-            if item.get_id() in existing:
-                self.debug("duplicate %s", item.get_id())
+            options = [p for p in possible.keys() if p not in existing]
+            if len(options) == 0:
+                return
+            item_id = random.choice(options)
+            if item_id in existing:
+                self.debug("duplicate %s", item_id)
                 continue
+            item = possible[item_id]
             # Don't remove the music in case there's a cached client around
             if oldest is not None:
                 self.root.remove_child(oldest)
@@ -311,52 +318,56 @@ class ShortListStore(BackendStore):
             )
 
 
-Plugins().set("ShortListStore", ShortListStore)
+if __name__ == "__main__":
+    Plugins().set("ShortListStore", ShortListStore)
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-m", "--music-path", required=True, help="Path to your music files"
-)
-parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
-parser.add_argument(
-    "-d", "--db", default="music.db", help="Path to music database (default: music.db)"
-)
-parser.add_argument(
-    "-i",
-    "--item-count",
-    default=50,
-    type=int,
-    help="Number of tracks in the playlist (default: 50)",
-)
-parser.add_argument(
-    "-u",
-    "--update-frequency",
-    default=300,
-    type=int,
-    help="Change out a track every N seconds (default: 300)",
-)
-args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m", "--music-path", required=True, help="Path to your music files"
+    )
+    parser.add_argument("-n", "--name", default="Shortlist", help="Name of UPnP store")
+    parser.add_argument(
+        "-d",
+        "--db",
+        default="music.db",
+        help="Path to music database (default: music.db)",
+    )
+    parser.add_argument(
+        "-i",
+        "--item-count",
+        default=50,
+        type=int,
+        help="Number of tracks in the playlist (default: 50)",
+    )
+    parser.add_argument(
+        "-u",
+        "--update-frequency",
+        default=300,
+        type=int,
+        help="Change out a track every N seconds (default: 300)",
+    )
+    args = parser.parse_args()
 
-coherence = Coherence(
-    {
-        "logging": {
-            "level": "warning",
-            "subsystem": [
-                {"active": "yes", "name": "shortlist_store", "level": "debug"}
-            ],
-        },
-        "controlpoint": "yes",
-        "plugin": [
-            {
-                "backend": "ShortListStore",
-                "name": args.name,
-                "medialocation": args.music_path,
-                "mediadb": args.db,
-                "trackcount": args.item_count,
-                "updateFrequency": args.update_frequency,
+    coherence = Coherence(
+        {
+            "logging": {
+                "level": "warning",
+                "subsystem": [
+                    {"active": "yes", "name": "shortlist_store", "level": "debug"}
+                ],
             },
-        ],
-    }
-)
+            "controlpoint": "yes",
+            "plugin": [
+                {
+                    "backend": "ShortListStore",
+                    "name": args.name,
+                    "medialocation": args.music_path,
+                    "mediadb": args.db,
+                    "trackcount": args.item_count,
+                    "updateFrequency": args.update_frequency,
+                },
+            ],
+        }
+    )
 
-reactor.run()
+    reactor.run()
