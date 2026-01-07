@@ -175,14 +175,20 @@ class ShortListStore(BackendStore):
         return ret
 
     def get_by_id(self, id):
+        if isinstance(id, bytes):
+            id = id.decode("utf-8", "ignore")
         self.debug("Get by id: %s" % id)
         if id == "0":
             id = "1000"
         try:
             return self.store[id]
         except KeyError:
-            self.info("Nothing for %s", id)
-            self.debug(list(self.store.keys()))
+            prefix_keys = [
+                k for k in self.store.keys() if k.startswith(id) or id.startswith(k)
+            ]
+            if len(prefix_keys) == 1:
+                return self.store[prefix_keys[0]]
+            self.info("Nothing for %s", id, prefix_keys)
             return None
 
     def add_store_item(self, id, item):
