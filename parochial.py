@@ -352,6 +352,7 @@ if __name__ == "__main__":
         type=int,
         help="Change out a track every N seconds (default: 300)",
     )
+    parser.add_argument("-p", "--port", default=8080, type=int, help="Server port")
     args = parser.parse_args()
 
     coherence = Coherence(
@@ -362,6 +363,7 @@ if __name__ == "__main__":
                     {"active": "yes", "name": "shortlist_store", "level": "debug"}
                 ],
             },
+            "serverport": args.port,
             "controlpoint": "yes",
             "plugin": [
                 {
